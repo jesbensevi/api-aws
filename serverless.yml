@@ -1,0 +1,78 @@
+service: api-star-wars
+
+custom:
+  settings:
+    STARTWARS_TABLE: startwarsTable
+
+frameworkVersion: "2"
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  region: us-east-1
+  environment: ${self:custom.settings}
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - dynamodb:DescribeTable
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource: "arn:aws:dynamodb:${self:provider.region}:*:table/${self:custom.settings.STARTWARS_TABLE}"
+
+functions:
+  getAllPeople:
+    handler: lambdas/endpoints/getAllPeople.handler
+    events:
+      - http:
+          path: /people
+          method: GET
+
+  getPeopleById:
+    handler: lambdas/endpoints/getPeopleById.handler
+    events:
+      - http:
+          path: /people/{id}
+          method: GET
+
+  postPersonaId:
+    handler: lambdas/endpoints/postPersonaId.handler
+    events:
+      - http:
+          path: /newApi/people/{id}
+          method: POST
+
+  getAllPersona:
+    handler: lambdas/endpoints/getAllPersona.handler
+    events:
+      - http:
+          path: /newApi/people
+          method: GET
+
+  getPersonaById:
+    handler: lambdas/endpoints/getPersonaById.handler
+    events:
+      - http:
+          path: /newApi/people/{id}
+          method: GET
+
+resources:
+  Resources:
+    PostsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: "id"
+            AttributeType: "S"
+        KeySchema:
+          - AttributeName: "id"
+            KeyType: "HASH"
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+        TableName: ${self:custom.settings.STARTWARS_TABLE}
